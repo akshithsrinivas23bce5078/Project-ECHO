@@ -1,0 +1,314 @@
+# ============================================
+# Project ECHO — Centralized Configuration
+# ============================================
+
+trust:
+  high_threshold: 0.7
+  low_threshold: 0.4
+  initial_mean: 0.5
+  initial_variance: 0.25
+
+cognitive_load:
+  high_threshold: 0.7
+  low_threshold: 0.3
+
+clc:
+  nominal_min: 0.35
+  nominal_max: 0.55
+  window_size: 20          # number of digraphs per CLC window
+
+emotion:
+  confidence_threshold: 0.6
+  labels:
+    - frustrated
+    - focused
+    - fatigued
+    - neutral
+    - engaged
+
+dster:
+  embedding_dim: 64
+  num_heads: 4
+  num_layers: 2
+  dropout: 0.1
+  sequence_length: 50      # number of keystroke events per inference window
+
+sigma_lognormal:
+  min_strokes: 3
+  velocity_threshold: 0.01 # minimum velocity to register a stroke
+
+# ============================================
+# Phase 1: Biometric Precision Configuration
+# ============================================
+
+sliding_window:
+  window_size: 50           # events per window (matches DSTER seq_len)
+  overlap_ratio: 0.5        # 50% overlap between consecutive windows
+  min_density: 20           # minimum press events per valid window
+
+idelog:
+  max_iterations: 50        # maximum IDeLog refinement iterations
+  convergence_threshold: 0.001  # stop when param change < threshold
+  min_segment_points: 10    # minimum trajectory points per segment
+  pause_velocity_threshold: 5.0  # px/s below which = pause
+  pause_duration_ms: 100.0  # ms of low velocity to confirm segment boundary
+
+snr_thresholds:
+  unsatisfactory: 15.0      # < 15 dB: discard (non-ballistic / jitter)
+  good: 20.0                # 20-25 dB: standard quality (weight 0.7)
+  excellent: 25.0           # > 25 dB: pristine data (weight 1.0)
+
+gaussian_range_encoding:
+  num_gaussians: 16         # number of Gaussian basis functions
+  learnable_params: true    # μ and σ are trainable
+
+validation:
+  dster_f1_target: 0.95
+  snr_target_db: 24.0
+  latency_target_ms: 40.0
+
+# ============================================
+# Game Framework Configuration
+# ============================================
+games:
+  session_defaults:
+    duration_seconds: 1800    # 30-minute default session
+    sample_rate_hz: 1.0       # belief updates per second
+    warmup_seconds: 30        # settle period before DDA kicks in
+    dda_update_interval: 16.0 # SECONDS per DDA cycle (updated from 15s)
+
+  hint_engine:
+    enabled: true
+    tiers:
+      nudge: 10.0      # trigger vague hint after 10s thinking
+      guide: 20.0      # trigger tactical hint after 20s thinking
+      solution: 30.0   # trigger explicit solution after 30s thinking
+
+  profiles:
+    left_4_dead:
+      display_name: "Left 4 Dead (AI Director)"
+      parameters:
+        enemy_spawn_rate: { default: 0.5, min: 0.1, max: 1.0, unit: "normalized" }
+        horde_frequency: { default: 0.5, min: 0.1, max: 1.0, unit: "normalized" }
+        health_item_scarcity: { default: 0.5, min: 0.2, max: 0.9, unit: "normalized" }
+        special_infected_cap: { default: 3.0, min: 1.0, max: 6.0, unit: "count" }
+        wanderer_density: { default: 0.5, min: 0.1, max: 1.0, unit: "normalized" }
+
+    alien_isolation:
+      display_name: "Alien: Isolation (Menace Gauge)"
+      parameters:
+        alien_menace_gauge: { default: 0.5, min: 0.0, max: 1.0, unit: "normalized" }
+        tension_budget: { default: 1.0, min: 0.2, max: 2.0, unit: "multiplier" }
+        alien_search_radius: { default: 0.5, min: 0.1, max: 1.0, unit: "normalized" }
+        vent_drop_probability: { default: 0.3, min: 0.05, max: 0.8, unit: "probability" }
+        noise_sensitivity: { default: 0.5, min: 0.1, max: 1.0, unit: "normalized" }
+
+    resident_evil_4:
+      display_name: "Resident Evil 4 (Action Scoring)"
+      parameters:
+        enemy_accuracy: { default: 0.6, min: 0.1, max: 1.0, unit: "normalized" }
+        action_score: { default: 5.0, min: 1.0, max: 10.0, unit: "level" }
+        enemy_aggression: { default: 0.5, min: 0.2, max: 1.0, unit: "normalized" }
+        item_drop_quality: { default: 0.5, min: 0.1, max: 1.0, unit: "normalized" }
+        damage_taken_mult: { default: 1.0, min: 0.5, max: 2.0, unit: "multiplier" }
+
+    silent_hill:
+      display_name: "Silent Hill: Shattered Memories"
+      parameters:
+        world_decay_speed: { default: 0.5, min: 0.1, max: 1.0, unit: "normalized" }
+        monster_type_bias: { default: 0.5, min: 0.0, max: 1.0, unit: "normalized" }
+        puzzle_obfuscation: { default: 0.5, min: 0.1, max: 1.0, unit: "normalized" }
+        environment_lighting: { default: 0.5, min: 0.1, max: 1.0, unit: "normalized" }
+        static_interference: { default: 0.5, min: 0.0, max: 1.0, unit: "normalized" }
+
+# ============================================
+# OpenCV Vision Pipeline Configuration
+# ============================================
+opencv:
+  frame_resolution: [640, 480]
+  optical_flow:
+    pyr_scale: 0.5
+    levels: 3
+    winsize: 15
+    iterations: 3
+    poly_n: 5
+    poly_sigma: 1.2
+  saliency:
+    gaussian_kernel_size: 51
+  scene_change:
+    correlation_threshold: 0.85
+
+# ============================================
+# Visualization Configuration
+# ============================================
+visualization:
+  output_dir: "results/plots"
+  dpi: 150
+  figsize_default: [12, 8]
+  style: "seaborn-v0_8-whitegrid"
+  colormap: "viridis"
+  save_format: "png"
+
+# ============================================
+# Phase 2: Multimodal Fusion Configuration
+# ============================================
+multimodal_fusion:
+  enable_cnsa: false          # Cross-Needlet Spectral Attention
+  cnsa_bands: 4               # Number of spectral decomposition bands
+  enable_tarope: false        # Task-Aware Rotary Position Embeddings
+  num_task_contexts: 8        # Number of game genre contexts for TaRoPE
+  avt_cross_attention:
+    behavioral_dim: 64        # DSTER embedding dimension
+    visual_dim: 16            # Webcam feature dimension
+    context_dim: 8            # Game context feature dimension
+    embed_dim: 64             # Shared cross-modal embedding dimension
+    num_heads: 4              # Cross-attention heads
+
+# ============================================
+# Phase 3: Active Inference Configuration
+# ============================================
+active_inference:
+  enabled: false              # Enable free energy minimization
+  learning_rate: 0.05         # Free energy gradient descent step size
+  precision_decay: 0.98       # How quickly precision decays per update
+  prior_strength: 0.3         # Weight of prior in free energy bound
+  prediction_error_history: 50  # Rolling window for prediction error
+
+  markov_blanket:
+    sensory_states:           # Observable variables (from player)
+      - clc_raw
+      - iki_mean_ms
+      - snr_db
+      - emotion_label_encoded
+      - emotion_confidence
+      - neuromotor_load
+      - sigma_deviation
+      - mu_deviation
+      - movement_energy
+      - face_detected
+    active_states:            # Agent action variables
+      - verbosity_level
+      - ui_action_code
+      - difficulty_delta
+      - hud_declutter
+      - highlight_targets
+      - adaptation_magnitude
+
+# ============================================
+# Phase 4: HCXAI Transparency Configuration
+# ============================================
+transparency:
+  shap_explainer:
+    enabled: true
+    feature_baselines:
+      trust_mean: 0.5
+      cognitive_load: 0.45
+      neuromotor_load: 0.3
+      emotion_confidence: 0.6
+    top_k_contributors: 3     # Show top-K features in explanation
+
+  adaptive_dashboard:
+    enabled: true
+    history_size: 30          # Free energy trend history length
+    detail_levels:
+      minimal_threshold: 0.75   # Cognitive load > this = minimal dashboard
+      standard_threshold: 0.40  # Cognitive load > this = standard dashboard
+    alert_thresholds:
+      critical_cogload: 0.85
+      low_trust: 0.25
+      high_pred_error: 0.70
+      frustration_confidence: 0.75
+
+  neuromotor_stress:
+    load_threshold: 0.7       # Neuromotor load above this = stressed
+    sigma_deviation_threshold: 0.15  # σ deviation above this = stressed
+
+# ============================================
+# Phase 5: Edge Deployment Configuration
+# ============================================
+deployment:
+  onnx_export:
+    opset_version: 14
+    enable_dynamic_axes: true
+    validate_after_export: true
+
+  quantization:
+    method: "dynamic_int8"    # "dynamic_int8" | "fp16" | "none"
+    benchmark_runs: 50        # Number of inference runs for benchmarking
+    accuracy_threshold: 0.95  # Minimum accuracy preservation
+
+  sspra_authentication:
+    enabled: false
+    enrollment_threshold: 30  # Minimum samples for enrollment
+    auth_threshold: 0.6       # Minimum confidence for authentication
+    anomaly_sensitivity: 3.0  # Z-score threshold for anomaly detection
+    rolling_alpha: 0.15       # EMA smoothing for rolling auth score
+
+  edge_runtime:
+    backend: "pytorch"        # "pytorch" | "onnx" | "quantized"
+    warmup_inferences: 3      # Number of warmup runs
+    max_latency_history: 1000 # Rolling latency window size
+    target_latency_ms: 16.0   # Target inference latency (60 FPS budget)
+
+# ============================================
+# Evaluation Configuration
+# ============================================
+evaluation:
+  output_dir: "results/evaluation"
+  plot_output_dir: "results/plots/evaluation"
+  default_num_samples: 1000
+  default_seed: 42
+
+  cross_validation:
+    enabled: false
+    n_folds: 5
+    stratified: true
+
+  metric_thresholds:
+    min_accuracy: 0.80
+    min_f1_macro: 0.75
+    min_auc_macro: 0.85
+    target_f1: 0.95             # DSTER target from README
+    min_cohen_kappa: 0.60
+
+  plots:
+    generate_all: true
+    dpi: 150
+    save_format: "png"
+    plot_types:
+      - confusion_matrix
+      - pie_chart
+      - confidence_histogram
+      - f1_bar_chart
+      - precision_recall_f1_bars
+      - feature_correlation_heatmap
+      - roc_curves
+      - precision_recall_curves
+      - learning_curves
+      - error_analysis
+      - feature_importance
+      - calibration
+      - cross_validation_boxplot
+
+# ============================================
+# Pipeline Configuration
+# ============================================
+pipeline:
+  validate_contracts: true      # Enable inter-stage validation
+  log_timing: true              # Log per-stage timing
+  max_latency_ms: 50.0          # Total pipeline latency budget
+  stages:
+    - feature_extraction
+    - dster_emotion
+    - pomdp_belief
+    - adaptation
+
+# ============================================
+# Change Logging Configuration
+# ============================================
+changelog:
+  enabled: true
+  output_md: "CHANGELOG.md"
+  output_json: "changelog/changelog.json"
+  auto_version: false
+

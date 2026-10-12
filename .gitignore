@@ -1,0 +1,73 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Unit test / coverage reports
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# LaTeX compilation intermediates
+Project_ECHO_Combined/*.aux
+Project_ECHO_Combined/*.log
+Project_ECHO_Combined/*.out
+Project_ECHO_Combined/*.toc
+Project_ECHO_Combined/*.synctex.gz
+Project_ECHO_Combined/*.bbl
+Project_ECHO_Combined/*.blg
+Project_ECHO_Combined/*.fls
+Project_ECHO_Combined/*.fdb_latexmk
+
+# Editor / IDE artifacts
+.vscode/*
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+.DS_Store

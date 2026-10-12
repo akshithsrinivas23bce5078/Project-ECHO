@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-09-01T11:59:51",
+  "subdir": "evaluation",
+  "num_plots": 9,
+  "plots": [
+    "unified_v2_confusion_matrix.png",
+    "unified_v2_emotion_pie_chart.png",
+    "unified_v2_confidence_histogram.png",
+    "unified_v2_f1_scores.png",
+    "unified_v2_precision_recall_f1.png",
+    "unified_v2_roc_curves.png",
+    "unified_v2_pr_curves.png",
+    "unified_v2_error_analysis.png",
+    "unified_v2_calibration.png"
+  ]
+}

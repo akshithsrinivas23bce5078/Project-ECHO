@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Project ECHO — Empathic Cognitive Hook Orchestrator. Interactive demo with visual panic detection, calming music, and dynamic difficulty adjustment.">
+<title>Project ECHO — Interactive Panic Detection Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   PROJECT ECHO — DESIGN SYSTEM
+   ═══════════════════════════════════════════════════════ */
+:root {
+  /* Base palette */
+  --bg-primary: #0a0e17;
+  --bg-secondary: #111827;
+  --bg-card: rgba(17, 24, 39, 0.7);
+  --bg-glass: rgba(255, 255, 255, 0.03);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-glow: rgba(99, 102, 241, 0.3);
+
+  /* State colors */
+  --calm-primary: #10b981;
+  --calm-secondary: #059669;
+  --calm-glow: rgba(16, 185, 129, 0.25);
+
+  --focus-primary: #6366f1;
+  --focus-secondary: #4f46e5;
+  --focus-glow: rgba(99, 102, 241, 0.25);
+
+  --stress-primary: #f59e0b;
+  --stress-secondary: #d97706;
+  --stress-glow: rgba(245, 158, 11, 0.25);
+
+  --panic-primary: #ef4444;
+  --panic-secondary: #dc2626;
+  --panic-glow: rgba(239, 68, 68, 0.35);
+
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Fonts */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* Dynamic state vars — controlled by JS */
+  --state-color: var(--calm-primary);
+  --state-glow: var(--calm-glow);
+  --vignette-opacity: 0;
+  --pulse-speed: 3s;
+  --bg-hue-shift: 0deg;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 1.5s ease;
+}
+
+/* Animated background gradient */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, var(--state-glow) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+  z-index: -2;
+  transition: all 2s ease;
+  animation: bgPulse var(--pulse-speed) ease-in-out infinite alternate;
+}
+
+/* Panic vignette overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(239, 68, 68, 0.15) 100%);
+  opacity: var(--vignette-opacity);
+  z-index: 100;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+
+@keyframes bgPulse {
+  0% { filter: hue-rotate(0deg) brightness(1); }
+  100% { filter: hue-rotate(var(--bg-hue-shift)) brightness(1.05); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════════════════════ */
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 24px;
+  min-height: 100vh;
+}
+
+/* ═══════════════════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════════════════ */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.echo-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--focus-primary), var(--calm-primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  animation: logoSpin 8s linear infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.echo-logo::after {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+  animation: shine 3s ease-in-out infinite;
+}
+
+@keyframes logoSpin {
+  0% { border-radius: 12px 12px 12px 12px; }
+  25% { border-radius: 16px 8px 16px 8px; }
+  50% { border-radius: 12px 12px 12px 12px; }
+  75% { border-radius: 8px 16px 8px 16px; }
+  100% { border-radius: 12px 12px 12px 12px; }
+}
+
+@keyframes shine {
+  0%, 100% { transform: translateX(-100%) rotate(45deg); }
+  50% { transform: translateX(100%) rotate(45deg); }
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.header-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.genre-select {
+  padding: 8px 16px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.genre-select:hover {
+  border-color: var(--focus-primary);
+  box-shadow: 0 0 12px var(--focus-glow);
+}
+
+.genre-select option { background: var(--bg-secondary); }
+
+.btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--focus-primary), var(--calm-primary));
+  color: white;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--panic-primary), #b91c1c);
+  color: white;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(239, 68, 68, 0.4);
+}
+
+.btn-mute {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  border-radius: var(--radius-sm);
+}
+
+.btn-mute:hover { border-color: var(--state-color); }
+.btn-mute.muted { color: var(--panic-primary); }
+
+.hidden { display: none !important; }
+
+/* ═══════════════════════════════════════════════════════
+   METRICS STRIP
+   ═══════════════════════════════════════════════════════ */
+.metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.metric-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  transition: all 0.5s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--state-color), transparent);
+  opacity: 0.6;
+  transition: all 0.5s ease;
+}
+
+.metric-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  transition: color 0.5s ease;
+}
+
+.metric-unit {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-top: 4px;
+}
+
+/* State indicator card — larger */
+.metric-card.state-card {
+  grid-column: span 1;
+}
+
+.state-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.state-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--state-color);
+  box-shadow: 0 0 12px var(--state-glow);
+  animation: dotPulse var(--pulse-speed) ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+.state-label {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--state-color);
+  transition: color 0.5s ease;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN CONTENT AREA
+   ═══════════════════════════════════════════════════════ */
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .main-content { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   TYPING CHALLENGE AREA
+   ═══════════════════════════════════════════════════════ */
+.typing-area {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  transition: border-color 0.5s ease;
+}
+
+.typing-area.panic-border {
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.1);
+}
+
+.typing-area.calm-border {
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.05);
+}
+
+.section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .icon {
+  font-size: 1rem;
+}
+
+/* Prompt text to type */
+.prompt-display {
+  font-size: 1.4rem;
+  line-height: 1.8;
+  font-weight: 400;
+  color: var(--text-secondary);
+  padding: 24px;
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  min-height: 100px;
+  letter-spacing: 0.01em;
+  user-select: none;
+  position: relative;
+}
+
+.prompt-display .char {
+  transition: color 0.1s ease;
+}
+
+.prompt-display .char.correct {
+  color: var(--calm-primary);
+}
+
+.prompt-display .char.incorrect {
+  color: var(--panic-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--panic-primary);
+}
+
+.prompt-display .char.current {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 2px;
+  animation: cursorBlink 1s step-end infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { background: rgba(99, 102, 241, 0.3); }
+  50% { background: rgba(99, 102, 241, 0.1); }
+}
+
+/* Input area */
+.typing-input {
+  width: 100%;
+  padding: 16px 20px;
+  background: rgba(0,0,0,0.3);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.typing-input:focus {
+  border-color: var(--state-color);
+  box-shadow: 0 0 20px var(--state-glow);
+}
+
+.typing-input::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Difficulty badge */
+.difficulty-strip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.difficulty-badge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.5s ease;
+}
+
+.diff-easy {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--calm-primary);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.diff-medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--stress-primary);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.diff-hard {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--panic-primary);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Stats row */
+.stats-row {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-item .stat-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-item .stat-val {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════
+   RIGHT SIDEBAR — VISUALIZATIONS
+   ═══════════════════════════════════════════════════════ */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.viz-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  transition: all 0.5s ease;
+}
+
+/* Stress Meter (circular) */
+.stress-meter-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.stress-ring {
+  position: relative;
+  width: 180px;
+  height: 180px;
+}
+
+.stress-ring svg {
+  width: 180px;
+  height: 180px;
+  transform: rotate(-90deg);
+}
+
+.stress-ring .bg-ring {
+  fill: none;
+  stroke: rgba(255,255,255,0.05);
+  stroke-width: 10;
+}
+
+.stress-ring .fg-ring {
+  fill: none;
+  stroke: var(--state-color);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 502;
+  stroke-dashoffset: 502;
+  transition: stroke-dashoffset 0.8s ease, stroke 0.5s ease;
+  filter: drop-shadow(0 0 8px var(--state-glow));
+}
+
+.stress-ring .center-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.stress-ring .pct {
+  font-size: 2.2rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--state-color);
+  transition: color 0.5s ease;
+}
+
+.stress-ring .pct-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+/* Key Frequency Bars */
+.freq-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 80px;
+  padding: 8px 0;
+}
+
+.freq-bar {
+  width: 6px;
+  min-height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--state-color);
+  transition: height 0.15s ease, background 0.5s ease;
+  opacity: 0.8;
+}
+
+/* DDA Parameters list */
+.dda-params {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dda-param-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dda-param-name {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  width: 110px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dda-bar-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.dda-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--state-color);
+  transition: width 0.6s ease, background 0.5s ease;
+}
+
+.dda-param-val {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  width: 40px;
+  text-align: right;
+}
+
+/* Music indicator */
+.music-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: var(--radius-sm);
+  transition: all 0.5s ease;
+}
+
+.music-indicator.active {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.music-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 20px;
+}
+
+.music-bar {
+  width: 3px;
+  background: var(--calm-primary);
+  border-radius: 2px;
+  transition: height 0.3s ease;
+}
+
+.music-bar.b1 { animation: musicWave 1.2s ease-in-out infinite; }
+.music-bar.b2 { animation: musicWave 1.2s ease-in-out 0.15s infinite; }
+.music-bar.b3 { animation: musicWave 1.2s ease-in-out 0.3s infinite; }
+.music-bar.b4 { animation: musicWave 1.2s ease-in-out 0.45s infinite; }
+.music-bar.b5 { animation: musicWave 1.2s ease-in-out 0.6s infinite; }
+
+@keyframes musicWave {
+  0%, 100% { height: 4px; }
+  50% { height: 18px; }
+}
+
+.music-label {
+  font-size: 0.75rem;
+  color: var(--calm-primary);
+  font-weight: 500;
+}
+
+.music-indicator:not(.active) .music-bar {
+  animation: none;
+  height: 4px;
+}
+
+.music-indicator:not(.active) .music-label {
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════
+   WELCOME OVERLAY
+   ═══════════════════════════════════════════════════════ */
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 23, 0.95);
+  backdrop-filter: blur(30px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+.welcome-overlay.out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.welcome-box {
+  text-align: center;
+  max-width: 560px;
+  padding: 48px;
+}
+
+.welcome-box .big-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--focus-primary), var(--calm-primary));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 900;
+  color: white;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+}
+
+.welcome-box h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--text-primary), var(--focus-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcome-box p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.welcome-box .features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 36px;
+  text-align: left;
+}
+
+.welcome-box .feature {
+  padding: 12px 16px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.welcome-box .feature .feat-icon { font-size: 1.2rem; margin-bottom: 6px; }
+.welcome-box .feature .feat-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.welcome-box .feature .feat-desc {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.btn-start {
+  padding: 14px 48px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--focus-primary), var(--calm-primary));
+  color: white;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.35);
+  transition: all 0.3s ease;
+}
+
+.btn-start:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.45);
+}
+
+/* ═══════════════════════════════════════════════════════
+   TIMELINE / EVENT LOG
+   ═══════════════════════════════════════════════════════ */
+.event-log {
+  max-height: 140px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(0,0,0,0.15);
+  border-radius: var(--radius-sm);
+}
+
+.event-log::-webkit-scrollbar { width: 4px; }
+.event-log::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 2px; }
+
+.log-entry {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  padding: 2px 4px;
+  border-radius: 2px;
+  animation: logIn 0.3s ease;
+}
+
+.log-entry.panic-log { color: var(--panic-primary); }
+.log-entry.calm-log { color: var(--calm-primary); }
+.log-entry.diff-log { color: var(--stress-primary); }
+
+@keyframes logIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .app-container { padding: 12px; }
+  .header { flex-direction: column; gap: 12px; }
+  .metrics-strip { grid-template-columns: 1fr 1fr; }
+  .typing-area { padding: 16px; }
+  .prompt-display { font-size: 1rem; padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     WELCOME OVERLAY
+     ═══════════════════════════════════════════════════════ -->
+<div class="welcome-overlay" id="welcomeOverlay">
+  <div class="welcome-box">
+    <div class="big-logo">E</div>
+    <h1>Project ECHO</h1>
+    <p>Empathic Cognitive Hook Orchestrator — an interactive demo that detects <strong>keyboard panic patterns</strong>, adapts game <strong>difficulty in real-time</strong>, and triggers <strong>calming ambient music</strong> to help you stay in flow.</p>
+    <div class="features">
+      <div class="feature">
+        <div class="feat-icon">⌨️</div>
+        <div class="feat-title">Keystroke Analysis</div>
+        <div class="feat-desc">Monitors typing speed, rhythm, error rate and key-mashing patterns</div>
+      </div>
+      <div class="feature">
+        <div class="feat-icon">🧠</div>
+        <div class="feat-title">Panic Detection</div>
+        <div class="feat-desc">DSTER-inspired emotional state classifier from typing behavior</div>
+      </div>
+      <div class="feature">
+        <div class="feat-icon">🎵</div>
+        <div class="feat-title">Calming Music</div>
+        <div class="feat-desc">Procedural ambient soundscape fades in when stress is detected</div>
+      </div>
+      <div class="feature">
+        <div class="feat-icon">🎮</div>
+        <div class="feat-title">Dynamic Difficulty</div>
+        <div class="feat-desc">Game parameters auto-adjust based on cognitive load estimation</div>
+      </div>
+    </div>
+    <button class="btn-start" id="btnStart" onclick="startDemo()">Begin Interactive Session</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MAIN APPLICATION
+     ═══════════════════════════════════════════════════════ -->
+<div class="app-container">
+
+  <!-- HEADER -->
+  <header class="header" id="appHeader">
+    <div class="header-brand">
+      <div class="echo-logo">E</div>
+      <div>
+        <div class="header-title">Project ECHO</div>
+        <div class="header-subtitle">Empathic Cognitive Hook Orchestrator</div>
+      </div>
+    </div>
+    <div class="header-controls">
+      <select class="genre-select" id="genreSelect">
+        <option value="fps">🔫 First-Person Shooter</option>
+        <option value="puzzle">🧩 Puzzle</option>
+        <option value="strategy">⚔️ Real-Time Strategy</option>
+        <option value="racing">🏎️ Racing</option>
+        <option value="survival_horror" selected>👻 Survival Horror</option>
+      </select>
+      <button class="btn btn-mute" id="btnMute" title="Toggle calming music" onclick="toggleMute()">🔊</button>
+      <button class="btn btn-primary" id="btnReset" onclick="resetSession()">Reset</button>
+    </div>
+  </header>
+
+  <!-- METRICS STRIP -->
+  <div class="metrics-strip">
+    <div class="metric-card state-card">
+      <div class="metric-label">Emotional State</div>
+      <div class="state-indicator">
+        <div class="state-dot" id="stateDot"></div>
+        <div class="state-label" id="stateLabel">CALM</div>
+      </div>
+      <div class="metric-unit" id="stateDesc">Relaxed typing pattern detected</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Keystrokes / sec</div>
+      <div class="metric-value" id="kpsValue">0.0</div>
+      <div class="metric-unit">Inter-key interval analysis</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Cognitive Load</div>
+      <div class="metric-value" id="cogLoadValue">0.00</div>
+      <div class="metric-unit">CLC Spearman correlation</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Error Rate</div>
+      <div class="metric-value" id="errorRateValue">0%</div>
+      <div class="metric-unit">Mistyped characters</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Difficulty</div>
+      <div class="metric-value" id="difficultyValue">MED</div>
+      <div class="metric-unit">DDA adjustment active</div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <!-- LEFT: Typing Challenge -->
+    <div class="typing-area" id="typingArea">
+      <div class="section-title"><span class="icon">⌨️</span> Typing Challenge — Type the text below</div>
+
+      <div class="prompt-display" id="promptDisplay">
+        <!-- Characters rendered by JS -->
+      </div>
+
+      <input type="text" class="typing-input" id="typingInput" placeholder="Start typing here to begin..." autocomplete="off" spellcheck="false" autofocus>
+
+      <div class="difficulty-strip">
+        <div class="difficulty-badge diff-medium" id="diffBadge">Medium Difficulty</div>
+        <div class="stats-row">
+          <div class="stat-item"><span class="stat-label">WPM</span><span class="stat-val" id="wpmStat">0</span></div>
+          <div class="stat-item"><span class="stat-label">Accuracy</span><span class="stat-val" id="accStat">100%</span></div>
+          <div class="stat-item"><span class="stat-label">Session</span><span class="stat-val" id="sessionTime">0:00</span></div>
+          <div class="stat-item"><span class="stat-label">Words Done</span><span class="stat-val" id="wordsDone">0</span></div>
+        </div>
+      </div>
+
+      <!-- Event log -->
+      <div class="section-title"><span class="icon">📋</span> Adaptation Log</div>
+      <div class="event-log" id="eventLog"></div>
+    </div>
+
+    <!-- RIGHT: Sidebar Visualizations -->
+    <div class="sidebar">
+      <!-- Stress Meter -->
+      <div class="viz-card">
+        <div class="section-title" style="margin-bottom:12px"><span class="icon">🎯</span> Stress Level</div>
+        <div class="stress-meter-container">
+          <div class="stress-ring">
+            <svg viewBox="0 0 180 180">
+              <circle class="bg-ring" cx="90" cy="90" r="80"/>
+              <circle class="fg-ring" id="stressRing" cx="90" cy="90" r="80"/>
+            </svg>
+            <div class="center-text">
+              <div class="pct" id="stressPct">0%</div>
+              <div class="pct-label">Stress Index</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Frequency Visualizer -->
+      <div class="viz-card">
+        <div class="section-title" style="margin-bottom:12px"><span class="icon">📊</span> Input Frequency</div>
+        <div class="freq-bars" id="freqBars">
+          <!-- 30 bars rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Music Status -->
+      <div class="viz-card">
+        <div class="section-title" style="margin-bottom:12px"><span class="icon">🎵</span> Calming Audio</div>
+        <div class="music-indicator" id="musicIndicator">
+          <div class="music-bars">
+            <div class="music-bar b1"></div>
+            <div class="music-bar b2"></div>
+            <div class="music-bar b3"></div>
+            <div class="music-bar b4"></div>
+            <div class="music-bar b5"></div>
+          </div>
+          <div class="music-label" id="musicLabel">Standby — activates on stress</div>
+        </div>
+      </div>
+
+      <!-- DDA Parameters -->
+      <div class="viz-card">
+        <div class="section-title" style="margin-bottom:12px"><span class="icon">🎮</span> DDA Parameters</div>
+        <div class="dda-params" id="ddaParams">
+          <!-- Rendered by JS based on genre -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT ENGINE
+     ═══════════════════════════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════════════════
+// TYPING PROMPTS — difficulty-tiered
+// ═══════════════════════════════════════════════════════
+const PROMPTS = {
+  easy: [
+    "The sun rose over the quiet lake.",
+    "A small cat sat by the warm fire.",
+    "Rain fell gently on the old roof.",
+    "Birds sang in the tall green trees.",
+    "The wind blew through the open door.",
+    "She walked along the sandy beach.",
+    "A bright moon lit up the dark sky.",
+    "He read a book in the soft chair.",
+    "Fresh bread baked in the hot oven.",
+    "Calm waves lapped at the rocky shore.",
+  ],
+  medium: [
+    "The algorithm processed thousands of data points efficiently.",
+    "Quantum computing challenges traditional encryption methods.",
+    "Machine learning models require significant computational power.",
+    "Distributed systems achieve fault tolerance through redundancy.",
+    "Neural networks approximate complex nonlinear functions.",
+    "Bayesian inference updates beliefs given new observations.",
+    "The cognitive load of multitasking reduces overall performance.",
+    "Dynamic difficulty adjustment keeps players in a flow state.",
+    "Keystroke dynamics reveal hidden patterns of user behavior.",
+    "Emotional recognition from typing is a nascent research area.",
+  ],
+  hard: [
+    "Partially observable Markov decision processes model environments with hidden states and probabilistic transitions.",
+    "The dual-stream transformer architecture captures both temporal rhythmic patterns and cross-feature contextual relationships in parallel.",
+    "Exponential backoff with jittered retry intervals prevents thundering herd problems in distributed microservice architectures.",
+    "Spearman rank correlation between keystroke complexity ranks and inter-key interval ranks estimates cognitive load non-intrusively.",
+    "The sigma-lognormal neuromotor kinematic model decomposes continuous trajectories into time-overlapped lognormal velocity primitives.",
+    "Empathic computing systems must calibrate trust without persuasion, adapting explanation depth to counter automation bias dynamically.",
+  ],
+};
+
+// ═══════════════════════════════════════════════════════
+// GAME PARAMETER DEFINITIONS (mirrors echo_config.yaml)
+// ═══════════════════════════════════════════════════════
+const GAME_PROFILES = {
+  fps: {
+    name: "First-Person Shooter",
+    params: {
+      enemy_accuracy:     { default: 0.50, min: 0.10, max: 0.95, difficulty: true },
+      spawn_rate:         { default: 0.50, min: 0.10, max: 1.00, difficulty: true },
+      enemy_health:       { default: 1.00, min: 0.30, max: 2.00, difficulty: true },
+      aim_assist:         { default: 0.00, min: 0.00, max: 0.80, assist: true },
+      damage_mult:        { default: 1.00, min: 0.50, max: 2.00, assist: true },
+      ammo_freq:          { default: 0.50, min: 0.20, max: 1.00, assist: true },
+    }
+  },
+  puzzle: {
+    name: "Puzzle",
+    params: {
+      time_limit:         { default: 1.00, min: 0.50, max: 3.00, assist: true },
+      hint_freq:          { default: 0.30, min: 0.00, max: 1.00, assist: true },
+      complexity:         { default: 0.50, min: 0.10, max: 1.00, difficulty: true },
+      undo_limit:         { default: 0.25, min: 0.05, max: 1.00, assist: true },
+      grid_size:          { default: 0.50, min: 0.20, max: 1.00, difficulty: true },
+    }
+  },
+  strategy: {
+    name: "Real-Time Strategy",
+    params: {
+      ai_aggression:      { default: 0.50, min: 0.10, max: 1.00, difficulty: true },
+      resource_rate:      { default: 1.00, min: 0.30, max: 2.50, assist: true },
+      fog_radius:         { default: 0.50, min: 0.20, max: 1.00, assist: true },
+      tech_speed:         { default: 1.00, min: 0.50, max: 2.00, difficulty: true },
+      unit_cap:           { default: 0.50, min: 0.20, max: 1.00, assist: true },
+    }
+  },
+  racing: {
+    name: "Racing",
+    params: {
+      rubber_band:        { default: 0.30, min: 0.00, max: 1.00, assist: true },
+      obstacle_density:   { default: 0.50, min: 0.10, max: 0.90, difficulty: true },
+      boost_freq:         { default: 0.50, min: 0.10, max: 1.00, assist: true },
+      ai_skill:           { default: 0.50, min: 0.10, max: 1.00, difficulty: true },
+      handling_assist:    { default: 0.00, min: 0.00, max: 0.80, assist: true },
+    }
+  },
+  survival_horror: {
+    name: "Survival Horror",
+    params: {
+      spawn_freq:         { default: 0.40, min: 0.10, max: 0.90, difficulty: true },
+      resource_scarce:    { default: 0.60, min: 0.20, max: 1.00, difficulty: true },
+      jumpscare:          { default: 0.50, min: 0.10, max: 1.00, difficulty: true },
+      darkness:           { default: 0.50, min: 0.20, max: 1.00, difficulty: true },
+      save_points:        { default: 0.50, min: 0.10, max: 1.00, assist: true },
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let state = {
+  running: false,
+  genre: 'survival_horror',
+  muted: false,
+
+  // Typing
+  currentPrompt: '',
+  charIndex: 0,
+  totalChars: 0,
+  correctChars: 0,
+  errorChars: 0,
+  wordsCompleted: 0,
+
+  // Timing
+  sessionStartTime: null,
+  keyTimestamps: [],       // recent key press times (for KPS, IKI)
+  ikiHistory: [],          // inter-key intervals in ms
+  backspaceCount: 0,
+  totalKeyPresses: 0,
+
+  // Derived metrics
+  kps: 0,                  // keys per second
+  cognitiveLoad: 0.3,
+  stressLevel: 0,          // 0–100
+  emotionState: 'calm',    // calm | focused | stressed | panic
+  difficultyLevel: 'medium', // easy | medium | hard
+
+  // DDA params — current values
+  gameParams: {},
+
+  // Frequency visualizer
+  freqHistory: new Array(30).fill(0),
+
+  // Music
+  calmMusicPlaying: false,
+};
+
+// ═══════════════════════════════════════════════════════
+// WEB AUDIO — PROCEDURAL CALMING MUSIC
+// ═══════════════════════════════════════════════════════
+let audioCtx = null;
+let masterGain = null;
+let musicNodes = [];
+let musicFadeInterval = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0;
+  masterGain.connect(audioCtx.destination);
+}
+
+function createCalmAmbience() {
+  if (!audioCtx) return;
+  stopCalmAmbience();
+
+  // Layer 1: Deep pad (C3)
+  const pad1 = createPadOsc(130.81, 'sine', 0.12);
+  // Layer 2: Fifth above (G3)
+  const pad2 = createPadOsc(196.00, 'sine', 0.08);
+  // Layer 3: Octave (C4)
+  const pad3 = createPadOsc(261.63, 'sine', 0.05);
+  // Layer 4: Subtle shimmer (E4)
+  const pad4 = createPadOsc(329.63, 'triangle', 0.03);
+  // Layer 5: Low sub (C2)
+  const sub = createPadOsc(65.41, 'sine', 0.10);
+
+  musicNodes = [pad1, pad2, pad3, pad4, sub];
+
+  // Slow LFO on master for breathing effect
+  const lfo = audioCtx.createOscillator();
+  const lfoGain = audioCtx.createGain();
+  lfo.type = 'sine';
+  lfo.frequency.value = 0.1; // Very slow
+  lfoGain.gain.value = 0.02;
+  lfo.connect(lfoGain);
+  lfoGain.connect(masterGain.gain);
+  lfo.start();
+  musicNodes.push({ osc: lfo, gain: lfoGain });
+}
+
+function createPadOsc(freq, type, vol) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  // Slight detune for warmth
+  osc.detune.value = (Math.random() - 0.5) * 10;
+  gain.gain.value = vol;
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start();
+  return { osc, gain };
+}
+
+function fadeInMusic(targetVol = 0.4, durationMs = 3000) {
+  if (!audioCtx || state.muted) return;
+  clearInterval(musicFadeInterval);
+  const steps = 60;
+  const stepTime = durationMs / steps;
+  let current = masterGain.gain.value;
+  const increment = (targetVol - current) / steps;
+
+  musicFadeInterval = setInterval(() => {
+    current += increment;
+    if ((increment > 0 && current >= targetVol) || (increment < 0 && current <= targetVol)) {
+      masterGain.gain.value = targetVol;
+      clearInterval(musicFadeInterval);
+    } else {
+      masterGain.gain.value = Math.max(0, current);
+    }
+  }, stepTime);
+}
+
+function fadeOutMusic(durationMs = 2000) {
+  if (!audioCtx) return;
+  clearInterval(musicFadeInterval);
+  const steps = 40;
+  const stepTime = durationMs / steps;
+  let current = masterGain.gain.value;
+  const decrement = current / steps;
+
+  musicFadeInterval = setInterval(() => {
+    current -= decrement;
+    if (current <= 0.001) {
+      masterGain.gain.value = 0;
+      clearInterval(musicFadeInterval);
+    } else {
+      masterGain.gain.value = current;
+    }
+  }, stepTime);
+}
+
+function stopCalmAmbience() {
+  musicNodes.forEach(n => {
+    try { n.osc.stop(); } catch(e) {}
+  });
+  musicNodes = [];
+}
+
+function toggleMute() {
+  state.muted = !state.muted;
+  const btn = document.getElementById('btnMute');
+  if (state.muted) {
+    btn.textContent = '🔇';
+    btn.classList.add('muted');
+    if (masterGain) masterGain.gain.value = 0;
+  } else {
+    btn.textContent = '🔊';
+    btn.classList.remove('muted');
+    if (state.calmMusicPlaying && masterGain) {
+      fadeInMusic(0.3, 1000);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// PROMPT MANAGEMENT
+// ═══════════════════════════════════════════════════════
+function getPromptForDifficulty(diff) {
+  const pool = PROMPTS[diff] || PROMPTS.medium;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function loadNewPrompt() {
+  state.currentPrompt = getPromptForDifficulty(state.difficultyLevel);
+  state.charIndex = 0;
+  renderPrompt();
+}
+
+function renderPrompt() {
+  const display = document.getElementById('promptDisplay');
+  let html = '';
+  for (let i = 0; i < state.currentPrompt.length; i++) {
+    let cls = '';
+    if (i < state.charIndex) {
+      // Check if it was correct (we track errors separately)
+      cls = 'correct';
+    } else if (i === state.charIndex) {
+      cls = 'current';
+    }
+    const ch = state.currentPrompt[i] === ' ' ? '&nbsp;' : escapeHtml(state.currentPrompt[i]);
+    html += `<span class="char ${cls}">${ch}</span>`;
+  }
+  display.innerHTML = html;
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+// ═══════════════════════════════════════════════════════
+// KEYSTROKE ANALYSIS ENGINE
+// ═══════════════════════════════════════════════════════
+function handleKeyPress(e) {
+  if (!state.running) return;
+
+  const now = performance.now();
+  state.totalKeyPresses++;
+
+  // Track timestamps for KPS
+  state.keyTimestamps.push(now);
+  // Keep last 3 seconds of timestamps
+  const cutoff = now - 3000;
+  state.keyTimestamps = state.keyTimestamps.filter(t => t > cutoff);
+
+  // Compute IKI (inter-key interval)
+  if (state.keyTimestamps.length >= 2) {
+    const iki = state.keyTimestamps[state.keyTimestamps.length - 1] -
+                state.keyTimestamps[state.keyTimestamps.length - 2];
+    state.ikiHistory.push(iki);
+    if (state.ikiHistory.length > 100) state.ikiHistory.shift();
+  }
+
+  // Backspace tracking
+  if (e.key === 'Backspace') {
+    state.backspaceCount++;
+    return; // Don't process as character input
+  }
+
+  // Only process printable characters
+  if (e.key.length !== 1) return;
+
+  const expectedChar = state.currentPrompt[state.charIndex];
+  if (!expectedChar) return;
+
+  state.totalChars++;
+
+  if (e.key === expectedChar) {
+    state.correctChars++;
+    state.charIndex++;
+    renderPrompt();
+
+    // Check if prompt completed
+    if (state.charIndex >= state.currentPrompt.length) {
+      state.wordsCompleted += state.currentPrompt.split(' ').length;
+      addLog('✅ Prompt completed!', '');
+      loadNewPrompt();
+      document.getElementById('typingInput').value = '';
+    }
+  } else {
+    state.errorChars++;
+    // Mark character as incorrect
+    const chars = document.querySelectorAll('#promptDisplay .char');
+    if (chars[state.charIndex]) {
+      chars[state.charIndex].classList.add('incorrect');
+      chars[state.charIndex].classList.remove('current');
+    }
+    state.charIndex++;
+    renderPrompt();
+  }
+
+  // Update frequency visualizer
+  updateFreqVisualizer();
+}
+
+function updateFreqVisualizer() {
+  state.freqHistory.push(state.keyTimestamps.length);
+  if (state.freqHistory.length > 30) state.freqHistory.shift();
+}
+
+// ═══════════════════════════════════════════════════════
+// STRESS / PANIC DETECTION ENGINE
+// (Mirrors DSTER + CLC logic from Project ECHO)
+// ═══════════════════════════════════════════════════════
+function computeMetrics() {
+  const now = performance.now();
+
+  // 1. Keys per second
+  const recentKeys = state.keyTimestamps.filter(t => t > now - 1000);
+  state.kps = recentKeys.length;
+
+  // 2. Error rate
+  const errorRate = state.totalChars > 0 ? state.errorChars / state.totalChars : 0;
+
+  // 3. Backspace ratio (high = frustration)
+  const bsRatio = state.totalKeyPresses > 0 ? state.backspaceCount / state.totalKeyPresses : 0;
+
+  // 4. IKI statistics (inter-key intervals)
+  let ikiMean = 200, ikiStd = 50;
+  if (state.ikiHistory.length > 5) {
+    const recent = state.ikiHistory.slice(-30);
+    ikiMean = recent.reduce((a, b) => a + b, 0) / recent.length;
+    ikiStd = Math.sqrt(recent.reduce((a, b) => a + (b - ikiMean) ** 2, 0) / recent.length);
+  }
+
+  // 5. Rapid-fire detection (very fast consecutive keys = mashing)
+  let rapidFireScore = 0;
+  if (state.ikiHistory.length > 3) {
+    const last5 = state.ikiHistory.slice(-5);
+    const veryFast = last5.filter(iki => iki < 60).length; // < 60ms = mashing
+    rapidFireScore = veryFast / 5;
+  }
+
+  // 6. CLC-inspired cognitive load estimation
+  // Uses IKI variability as proxy for cognitive load
+  const ikiCV = ikiMean > 0 ? ikiStd / ikiMean : 0; // Coefficient of variation
+  state.cognitiveLoad = clamp(
+    0.2 + (ikiCV * 0.8) + (errorRate * 0.5) + (bsRatio * 0.3),
+    0.05, 0.95
+  );
+
+  // 7. Composite stress level (0–100)
+  const speedStress = clamp((state.kps - 5) / 10, 0, 1); // High speed = stress
+  const rhythmStress = clamp(ikiCV - 0.3, 0, 1); // High variability = stress
+  const errorStress = clamp(errorRate * 3, 0, 1);
+  const mashStress = rapidFireScore;
+  const bsStress = clamp(bsRatio * 4, 0, 1);
+
+  state.stressLevel = clamp(
+    (speedStress * 20 + rhythmStress * 25 + errorStress * 25 + mashStress * 20 + bsStress * 10),
+    0, 100
+  );
+
+  // 8. Classify emotional state
+  if (state.stressLevel > 70) {
+    state.emotionState = 'panic';
+  } else if (state.stressLevel > 45) {
+    state.emotionState = 'stressed';
+  } else if (state.kps > 2 && errorRate < 0.05 && ikiCV < 0.4) {
+    state.emotionState = 'focused';
+  } else {
+    state.emotionState = 'calm';
+  }
+
+  // 9. Dynamic difficulty adjustment
+  adjustDifficulty();
+
+  // 10. Music control
+  controlMusic();
+}
+
+function adjustDifficulty() {
+  const prev = state.difficultyLevel;
+  const genre = state.genre;
+  const profile = GAME_PROFILES[genre];
+  if (!profile) return;
+
+  // Action classification (mirrors parameter_modulator.py)
+  let action = 'hold';
+  if (state.emotionState === 'panic' && state.cognitiveLoad > 0.7) {
+    action = 'ease';
+    state.difficultyLevel = 'easy';
+  } else if (state.emotionState === 'stressed' && state.cognitiveLoad > 0.6) {
+    action = 'ease';
+    state.difficultyLevel = 'easy';
+  } else if (state.emotionState === 'calm' && state.cognitiveLoad < 0.35) {
+    action = 'challenge';
+    state.difficultyLevel = 'hard';
+  } else if (state.emotionState === 'focused' && state.cognitiveLoad < 0.4) {
+    action = 'challenge';
+    state.difficultyLevel = 'hard';
+  } else {
+    state.difficultyLevel = 'medium';
+  }
+
+  // Compute DDA magnitude
+  let magnitude = 0;
+  if (action === 'ease') magnitude = -0.015;
+  else if (action === 'challenge') magnitude = 0.01;
+
+  // Apply to game params
+  for (const [key, spec] of Object.entries(profile.params)) {
+    if (!(key in state.gameParams)) {
+      state.gameParams[key] = spec.default;
+    }
+    let delta = 0;
+    const range = spec.max - spec.min;
+    if (action === 'ease') {
+      delta = spec.difficulty ? magnitude * range : -magnitude * range;
+    } else if (action === 'challenge') {
+      delta = spec.difficulty ? magnitude * range : -magnitude * range * 0.5;
+    }
+    state.gameParams[key] = clamp(state.gameParams[key] + delta, spec.min, spec.max);
+  }
+
+  if (prev !== state.difficultyLevel) {
+    addLog(`🎮 Difficulty: ${prev} → ${state.difficultyLevel}`, 'diff-log');
+    // Load new prompt matching difficulty
+    loadNewPrompt();
+    document.getElementById('typingInput').value = '';
+  }
+}
+
+function controlMusic() {
+  const shouldPlay = state.stressLevel > 50;
+
+  if (shouldPlay && !state.calmMusicPlaying) {
+    state.calmMusicPlaying = true;
+    createCalmAmbience();
+    fadeInMusic(0.3, 3000);
+    addLog('🎵 Calming music activated', 'calm-log');
+  } else if (!shouldPlay && state.calmMusicPlaying) {
+    state.calmMusicPlaying = false;
+    fadeOutMusic(2000);
+    setTimeout(() => stopCalmAmbience(), 2500);
+    addLog('🎵 Music fading out — stress reduced', 'calm-log');
+  }
+
+  // Adjust volume based on stress intensity
+  if (state.calmMusicPlaying && !state.muted && masterGain) {
+    const targetVol = 0.15 + (state.stressLevel / 100) * 0.35;
+    masterGain.gain.value += (targetVol - masterGain.gain.value) * 0.05;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// UI UPDATE LOOP
+// ═══════════════════════════════════════════════════════
+function updateUI() {
+  if (!state.running) return;
+
+  computeMetrics();
+
+  const root = document.documentElement;
+
+  // State color mapping
+  const stateColors = {
+    calm:     { color: '--calm-primary',   glow: '--calm-glow',   label: 'CALM',    desc: 'Relaxed typing pattern detected' },
+    focused:  { color: '--focus-primary',  glow: '--focus-glow',  label: 'FOCUSED', desc: 'Flow state — consistent rhythm' },
+    stressed: { color: '--stress-primary', glow: '--stress-glow', label: 'STRESSED', desc: 'Elevated typing speed & errors' },
+    panic:    { color: '--panic-primary',  glow: '--panic-glow',  label: 'PANIC',   desc: '⚠ Rapid key-mashing detected!' },
+  };
+
+  const sc = stateColors[state.emotionState];
+  root.style.setProperty('--state-color', `var(${sc.color})`);
+  root.style.setProperty('--state-glow', `var(${sc.glow})`);
+
+  // Vignette
+  root.style.setProperty('--vignette-opacity', state.emotionState === 'panic' ? '1' : '0');
+  root.style.setProperty('--pulse-speed', state.emotionState === 'panic' ? '0.8s' : '3s');
+  root.style.setProperty('--bg-hue-shift', state.emotionState === 'panic' ? '10deg' : '0deg');
+
+  // Border effect on typing area
+  const ta = document.getElementById('typingArea');
+  ta.classList.toggle('panic-border', state.emotionState === 'panic' || state.emotionState === 'stressed');
+  ta.classList.toggle('calm-border', state.emotionState === 'calm');
+
+  // Metrics
+  document.getElementById('stateLabel').textContent = sc.label;
+  document.getElementById('stateDesc').textContent = sc.desc;
+  document.getElementById('kpsValue').textContent = state.kps.toFixed(1);
+  document.getElementById('cogLoadValue').textContent = state.cognitiveLoad.toFixed(2);
+  document.getElementById('errorRateValue').textContent =
+    (state.totalChars > 0 ? ((state.errorChars / state.totalChars) * 100).toFixed(0) : '0') + '%';
+  document.getElementById('difficultyValue').textContent =
+    state.difficultyLevel === 'easy' ? 'EASY' : state.difficultyLevel === 'hard' ? 'HARD' : 'MED';
+
+  // Stress ring
+  const circumference = 2 * Math.PI * 80; // r=80
+  const offset = circumference - (state.stressLevel / 100) * circumference;
+  document.getElementById('stressRing').style.strokeDashoffset = offset;
+  document.getElementById('stressPct').textContent = Math.round(state.stressLevel) + '%';
+
+  // Frequency bars
+  const barsEl = document.getElementById('freqBars');
+  const barDivs = barsEl.querySelectorAll('.freq-bar');
+  const maxFreq = Math.max(...state.freqHistory, 1);
+  barDivs.forEach((bar, i) => {
+    const h = (state.freqHistory[i] / maxFreq) * 70 + 3;
+    bar.style.height = h + 'px';
+  });
+
+  // Difficulty badge
+  const badge = document.getElementById('diffBadge');
+  badge.className = 'difficulty-badge';
+  if (state.difficultyLevel === 'easy') {
+    badge.classList.add('diff-easy');
+    badge.textContent = 'Easy Difficulty';
+  } else if (state.difficultyLevel === 'hard') {
+    badge.classList.add('diff-hard');
+    badge.textContent = 'Hard Difficulty';
+  } else {
+    badge.classList.add('diff-medium');
+    badge.textContent = 'Medium Difficulty';
+  }
+
+  // WPM
+  const elapsed = state.sessionStartTime ? (performance.now() - state.sessionStartTime) / 60000 : 0;
+  const wpm = elapsed > 0.05 ? Math.round(state.correctChars / 5 / elapsed) : 0;
+  document.getElementById('wpmStat').textContent = wpm;
+
+  // Accuracy
+  const acc = state.totalChars > 0 ? ((state.correctChars / state.totalChars) * 100).toFixed(0) : '100';
+  document.getElementById('accStat').textContent = acc + '%';
+
+  // Session time
+  const secs = elapsed * 60;
+  const mins = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  document.getElementById('sessionTime').textContent = `${mins}:${s.toString().padStart(2, '0')}`;
+
+  // Words done
+  document.getElementById('wordsDone').textContent = state.wordsCompleted;
+
+  // Music indicator
+  const mi = document.getElementById('musicIndicator');
+  const ml = document.getElementById('musicLabel');
+  mi.classList.toggle('active', state.calmMusicPlaying);
+  ml.textContent = state.calmMusicPlaying ? 'Playing — calming ambient tones' : 'Standby — activates on stress';
+
+  // DDA params
+  updateDDADisplay();
+}
+
+function updateDDADisplay() {
+  const container = document.getElementById('ddaParams');
+  const profile = GAME_PROFILES[state.genre];
+  if (!profile) return;
+
+  let html = '';
+  for (const [key, spec] of Object.entries(profile.params)) {
+    const val = state.gameParams[key] ?? spec.default;
+    const pct = ((val - spec.min) / (spec.max - spec.min)) * 100;
+    const displayName = key.replace(/_/g, ' ');
+    html += `
+      <div class="dda-param-row">
+        <div class="dda-param-name">${displayName}</div>
+        <div class="dda-bar-track">
+          <div class="dda-bar-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="dda-param-val">${val.toFixed(2)}</div>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+// EVENT LOG
+// ═══════════════════════════════════════════════════════
+function addLog(message, cls = '') {
+  const log = document.getElementById('eventLog');
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US', { hour12: false });
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${cls}`;
+  entry.textContent = `[${time}] ${message}`;
+  log.prepend(entry);
+
+  // Keep max 50 entries
+  while (log.children.length > 50) {
+    log.removeChild(log.lastChild);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════
+function startDemo() {
+  initAudio();
+
+  // Dismiss welcome
+  document.getElementById('welcomeOverlay').classList.add('out');
+
+  state.running = true;
+  state.sessionStartTime = performance.now();
+  state.genre = document.getElementById('genreSelect').value;
+
+  // Init game params
+  const profile = GAME_PROFILES[state.genre];
+  if (profile) {
+    for (const [key, spec] of Object.entries(profile.params)) {
+      state.gameParams[key] = spec.default;
+    }
+  }
+
+  loadNewPrompt();
+  initFreqBars();
+  addLog('🚀 Session started — begin typing!', 'calm-log');
+  addLog(`🎮 Genre: ${GAME_PROFILES[state.genre]?.name || state.genre}`, '');
+
+  document.getElementById('typingInput').focus();
+
+  // Start update loop
+  setInterval(updateUI, 100); // 10 Hz update
+}
+
+function resetSession() {
+  state.running = false;
+  state.charIndex = 0;
+  state.totalChars = 0;
+  state.correctChars = 0;
+  state.errorChars = 0;
+  state.wordsCompleted = 0;
+  state.keyTimestamps = [];
+  state.ikiHistory = [];
+  state.backspaceCount = 0;
+  state.totalKeyPresses = 0;
+  state.kps = 0;
+  state.cognitiveLoad = 0.3;
+  state.stressLevel = 0;
+  state.emotionState = 'calm';
+  state.difficultyLevel = 'medium';
+  state.freqHistory = new Array(30).fill(0);
+
+  if (state.calmMusicPlaying) {
+    fadeOutMusic(500);
+    setTimeout(() => stopCalmAmbience(), 600);
+    state.calmMusicPlaying = false;
+  }
+
+  state.genre = document.getElementById('genreSelect').value;
+  const profile = GAME_PROFILES[state.genre];
+  if (profile) {
+    state.gameParams = {};
+    for (const [key, spec] of Object.entries(profile.params)) {
+      state.gameParams[key] = spec.default;
+    }
+  }
+
+  document.getElementById('typingInput').value = '';
+  document.getElementById('eventLog').innerHTML = '';
+
+  state.running = true;
+  state.sessionStartTime = performance.now();
+  loadNewPrompt();
+  addLog('🔄 Session reset', '');
+  addLog(`🎮 Genre: ${GAME_PROFILES[state.genre]?.name || state.genre}`, '');
+  document.getElementById('typingInput').focus();
+}
+
+function initFreqBars() {
+  const container = document.getElementById('freqBars');
+  container.innerHTML = '';
+  for (let i = 0; i < 30; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'freq-bar';
+    bar.style.height = '3px';
+    container.appendChild(bar);
+  }
+}
+
+// Genre change handler
+document.getElementById('genreSelect').addEventListener('change', (e) => {
+  if (state.running) resetSession();
+});
+
+// Keyboard input handler
+document.getElementById('typingInput').addEventListener('keydown', handleKeyPress);
+
+// Prevent form submission on Enter
+document.getElementById('typingInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') e.preventDefault();
+});
+
+// Keep focus on input
+document.addEventListener('click', () => {
+  if (state.running) {
+    document.getElementById('typingInput').focus();
+  }
+});
+
+// Utility
+function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+
+// Init freq bars on load
+window.addEventListener('DOMContentLoaded', initFreqBars);
+</script>
+
+</body>
+</html>

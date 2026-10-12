@@ -1,0 +1,80 @@
+{
+  "model_name": "DSTER Emotion Classifier",
+  "num_samples": 56,
+  "evaluation_time_ms": 69.57,
+  "labels": [
+    "angry",
+    "focused",
+    "thinking",
+    "neutral",
+    "joy",
+    "given_up"
+  ],
+  "overall_metrics": {
+    "accuracy": 0.017857,
+    "macro_f1": 0.007018,
+    "macro_precision": 0.003571,
+    "macro_recall": 0.2,
+    "weighted_f1": 0.000627,
+    "micro_f1": 0.017857,
+    "cohen_kappa": 0.0,
+    "matthews_corrcoef": 0.0,
+    "log_loss": 1.59634,
+    "macro_auc": 0.633136
+  },
+  "per_class_metrics": {
+    "angry": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "support": 15,
+      "auc": 0.61626,
+      "avg_precision": 0.382559
+    },
+    "focused": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "support": 26,
+      "auc": 0.598718,
+      "avg_precision": 0.491302
+    },
+    "thinking": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "support": 0,
+      "auc": 0.0,
+      "avg_precision": 0.0
+    },
+    "neutral": {
+      "precision": 0.017857,
+      "recall": 1.0,
+      "f1_score": 0.035088,
+      "support": 1,
+      "auc": 1.0,
+      "avg_precision": 1.0
+    },
+    "joy": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "support": 11,
+      "auc": 0.583838,
+      "avg_precision": 0.414966
+    },
+    "given_up": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "support": 3,
+      "auc": 1.0,
+      "avg_precision": 1.0
+    }
+  },
+  "confidence_analysis": {
+    "mean_confidence_correct": 0.2654,
+    "mean_confidence_incorrect": 0.2615
+  },
+  "generated_at": "2026-08-30T22:55:27"
+}

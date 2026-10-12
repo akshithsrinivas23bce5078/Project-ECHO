@@ -1,0 +1,55 @@
+{
+  "project": "Project ECHO",
+  "generated_at": "2026-09-01T11:59:51.270140",
+  "pending_entries": [
+    {
+      "category": "pipeline",
+      "description": "Ran unified live demo v2 session",
+      "timestamp": "2026-09-01T11:59:51.268771",
+      "files": [
+        "run_unified_demo.py"
+      ],
+      "version": "",
+      "author": "Project ECHO Team"
+    }
+  ],
+  "releases": [
+    {
+      "version": "2.0.0",
+      "date": "2026-08-28",
+      "title": "Supervised Learning Evaluation Metrics & Synchronous Pipeline",
+      "entries": [
+        {
+          "category": "metric",
+          "description": "Ran DSTER evaluation pipeline",
+          "timestamp": "2026-08-28T14:23:43.965182",
+          "files": [
+            "evaluation/run_evaluation.py"
+          ],
+          "version": "2.0.0",
+          "author": "Project ECHO Team"
+        },
+        {
+          "category": "visualization",
+          "description": "Generated 12 evaluation plots",
+          "timestamp": "2026-08-28T14:23:43.965214",
+          "files": [
+            "evaluation/evaluation_plots.py"
+          ],
+          "version": "2.0.0",
+          "author": "Project ECHO Team"
+        },
+        {
+          "category": "metric",
+          "description": "Saved evaluation report (JSON)",
+          "timestamp": "2026-08-28T14:23:43.965226",
+          "files": [
+            "results/evaluation/evaluation_report.json"
+          ],
+          "version": "2.0.0",
+          "author": "Project ECHO Team"
+        }
+      ]
+    }
+  ]
+}
